@@ -773,288 +773,1563 @@
   ```
 
 ---
-### Часть 2. Введение в объектно-ориентированное программирование
+### Часть 2. Введение в объектно-ориентированное программирование и смежные вопросы
 
-#### 1. Смысл понятий «инпульсация», «наследование», «полиморфизм».
+Ниже приведены развернутые пояснения для каждого пункта второй части с подробными определениями, примерами кода, объяснением концепций и дополнительными деталями для полного понимания. Каждый пункт включает теоретическую основу, практическое применение и важные аспекты реализации в С++.
 
-- **Инкапсуляция**: Скрытие данных и предоставление интерфейса.
+---
+
+#### 1. Смысл понятий «инкапсуляция», «наследование», «полиморфизм».
+
+**Определение**:  
+Эти три концепции являются основными принципами объектно-ориентированного программирования (ООП), которые позволяют создавать гибкие, модульные и масштабируемые программы.
+
+- **Инкапсуляция**:  
+  Инкапсуляция заключается в объединении данных (полей) и методов, работающих с этими данными, в одном классе, а также в ограничении прямого доступа к данным, предоставляя контролируемый интерфейс. Это защищает внутреннее состояние объекта от несанкционированного изменения и упрощает поддержку кода.
+
+  **Цели инкапсуляции**:
+  - Скрытие деталей реализации.
+  - Обеспечение целостности данных через проверку в методах.
+  - Упрощение интерфейса для пользователей класса.
+
+  **Пример**:
   ```cpp
-  class Example {
+  #include <iostream>
+  class BankAccount {
   private:
-      int data;
+      double balance; // Скрытое поле
+      std::string accountNumber;
   public:
-      void set(int x) { data = x; }
-      int get() const { return data; }
+      BankAccount(const std::string& number, double initialBalance) 
+          : accountNumber(number), balance(initialBalance) {
+          if (initialBalance < 0) balance = 0; // Проверка
+      }
+      void deposit(double amount) { // Контролируемый доступ
+          if (amount > 0) balance += amount;
+      }
+      double getBalance() const { // Только чтение
+          return balance;
+      }
+      std::string getAccountNumber() const {
+          return accountNumber;
+      }
   };
-  ```
 
-- **Наследование**: Создание производного класса.
-  ```cpp
-  class Base { public: void func() { std::cout << "Base" << std::endl; }; };
-  class Derived : public Base {};
-  ```
-
-- **Полиморфизм**: Разное поведение через общий интерфейс.
-  ```cpp
-  class Base {
-      virtual void func() { std::cout << "Base" << std::endl; };
-  };
-  class Derived : public Base {
-      void func() override { std::cout << "Derived" << std::endl; };
-  };
   int main() {
-      Base* ptr = { new Derived(); }
-      ptr->func(); // Derived
-      delete ptr;
+      BankAccount acc("12345", 1000.0);
+      acc.deposit(500.0);
+      std::cout << "Account: " << acc.getAccountNumber() 
+                << ", Balance: " << acc.getBalance() << std::endl; // Account: 12345, Balance: 1500
+      // acc.balance = -100; // Ошибка: balance private
       return 0;
   }
   ```
+  **Пояснение**:  
+  Поля `balance` и `accountNumber` скрыты (`private`), а доступ к ним предоставляется через методы `deposit` и `getBalance`, которые включают проверки. Это предотвращает некорректное использование объекта.
 
-#### 2. Шаблонные функции.
+- **Наследование**:  
+  Наследование позволяет создавать новый класс (производный) на основе существующего (базового), унаследовав его поля и методы. Это способствует повторному использованию кода и созданию иерархий классов.
 
-- **Определение**:
+  **Типы наследования в С++**:
+  - `public`: Публичные и защищенные члены базового класса сохраняют свои модификаторы доступа.
+  - `protected`: Публичные члены базового становятся защищенными.
+  - `private`: Все члены базового становятся приватными.
+
+  **Пример**:
   ```cpp
-  template<typename T>
-  T max(T a, T b) { return a > b ? a : b; }
-  ```
-
-- **Специализация**:
-  ```cpp
-  template<> const char* max(const char* a, const char* b) {
-      return strcmp(a, b) > 0 ? a : b;
-  }
-  ```
-
-#### 3. Шаблон класса.
-
-- **Пример**:
-  ```cpp
-  template<typename T>
-  class Box {
-      T value;
-      public:
-          void set(T v) { value = v; }
-  };
-  ```
-
-#### 4. Конструктор и деструктор.
-
-- **Пример**:
-  ```cpp
-  class Class {
-      int* ptr;
-      public:
-          Class() : ptr(new int(0)) {}
-          Class(const Class& other) : ptr(new int(*other.ptr)) {}
-          Class& operator=(const Class& other) {
-              if (&other != this) {
-                  delete ptr;
-                  ptr = new int(*other.ptr);
-              }
-              return *this;
-          }
-          ~Class() { delete ptr; }
-  };
-  ```
-
-- **Инициализация**:
-  ```cpp
-  Class a; // По умолчанию
-  Class b = a; // Копирование
-  Class c{}; // Однородная
-  ```
-
-#### 5. Правовые ссылки.
-
-- **Пример**:
-  ```cpp
-  class String {
-      char* data;
-      public:
-          String(String&& other) : data(other.data) { other.data = nullptr; }
-          String& operator=(String&& other) {
-              if (this != &other) {
-                  delete[] data;
-                  data = other.data;
-                  data.other.data = nullptr;
-              }
-              return *this;
-          }
-  };
-  ```
-
-#### 6. Инкапсуляция данных.
-
-- **Пример**:
-  ```cpp
-  class Data {
-      int value;
-      public:
-          void set(int v) { value = v; }
-      private:
-          int value;
-  };
-  ```
-
-#### 7. Композиция классов.
-
-- **Пример**:
-  ```cpp
-  class Engine {
-      int power;
-  };
-  class Car {
-      Engine engine;
-      public:
-          Car(int p) : engine(p) {}
-  };
-  ```
-
-#### 8. Наследование классов.
-
-- **Пример**:
-  ```cpp
-  class Base {
-      int x;
-      public:
-          Base(int i) : i(x) {}
-  };
-  class Derived : public Base {
-      int y;
-      public:
-          Derived(int i, int j) : Base(i), y(j) {}
-  };
-  ```
-
-#### 9. Доступ к полям.
-
-- **Пример**:
-  ```cpp
-  class Base {
-      public: int x;
-      protected: int y;
-      private: int z;
-  };
-  class Derived : public Base {
-      void func() { x = y = 1; } // z недоступен
-  };
-  ```
-
-#### 10. Классификатор const.
-
-- **Пример**:
-  ```cpp
-  class ConstExample {
-      int x;
-      public:
-          int get() const { return x; }
-  };
-  ```
-
-#### 11. Виртуальные функции.
-
-- **Пример**:
-  ```cpp
-  class Base {
-      virtual void func() = 0; }
-      virtual ~Base() {}
-  };
-  class Derived : public Base {
-      void func() override {}
-  };
-  ```
-
-#### 12. Наследование и сокрытие.
-
-- **Пример**:
-  ```cpp
-  class Base { void func(int); };
-  class Derived : public Base { void func(double); }; // Скрывает Base::func
-  ```
-
-#### 13. Перегрузка операторов.
-
-- **Пример**:
-  ```cpp
-  class Number {
-      int val;
-      public:
-          Number operator+(const Number& other) const {
-          return Number(val + other.val);
+  #include <iostream>
+  class Vehicle {
+  protected:
+      std::string brand;
+      int speed;
+  public:
+      Vehicle(const std::string& b, int s) : brand(b), speed(s) {}
+      void display() const {
+          std::cout << "Brand: " << brand << ", Speed: " << speed << std::endl;
       }
   };
-  ```
 
-#### 14. Внешние операторы.
-
-- **Пример**:
-  ```cpp
-  Number operator+(int x, const Number& n) {
-      return Number(x + n.val);
-  }
-  ```
-
-#### 15. Арифметические операторы.
-
-- **Пример**:
-  ```cpp
-  Number operator+(Number&& a, const Number& b) {
-      a += b;
-      return std::move(a);
-  }
-  ```
-
-#### 16. Дружественные функции.
-
-- **Пример**:
-  ```cpp
-  class Number {
-      friend std::ostream& operator<<(std::ostream& os, const Number& n);
+  class Car : public Vehicle {
+  private:
+      int doors;
+  public:
+      Car(const std::string& b, int s, int d) : Vehicle(b, s), doors(d) {}
+      void display() const {
+          Vehicle::display();
+          std::cout << "Doors: " << doors << std::endl;
+      }
   };
-  ```
 
-#### 17. Функторы.
-
-- **Пример**:
-  ```cpp
-  struct Adder {
-      int operator()(int x) { return x + 1; }
-  };
-  ```
-
-#### 18. Лямбда-функции.
-
-- **Пример**:
-  ```cpp
-  auto lambda = [](int x) { return x + 1; };
-  ```
-
-#### 19. Итераторы.
-
-- **Пример**:
-  ```cpp
-  std::vector<int> v = {1, 2, 3};
-  for (auto it = v.begin(); it != v.end(); ++it) {
-      std::cout << *it << std::endl;
+  int main() {
+      Car car("Toyota", 200, 4);
+      car.display(); // Brand: Toyota, Speed: 200, Doors: 4
+      return 0;
   }
   ```
+  **Пояснение**:  
+  Класс `Car` наследует `Vehicle`, добавляя поле `doors`. Метод `display` переопределяется, но базовая версия вызывается через `Vehicle::display`. Наследование позволяет расширить функциональность без дублирования кода.
 
-#### 20. Потоки ввода-вывода.
+- **Полиморфизм**:  
+  Полиморфизм позволяет объектам разных типов обрабатываться через общий интерфейс, обеспечивая разное поведение в зависимости от типа объекта. В С++ различают:
+  - **Динамический полиморфизм**: Реализуется через виртуальные функции и наследование.
+  - **Статический полиморфизм**: Реализуется через перегрузку функций/операторов и шаблоны.
 
-- **Пример**:
+  **Пример динамического полиморфизма**:
   ```cpp
-  std::ofstream out("file.txt");
-  out << "Hello";
+  #include <iostream>
+  class Shape {
+  public:
+      virtual double area() const = 0; // Чисто виртуальная функция
+      virtual ~Shape() = default; // Виртуальный деструктор
+  };
+
+  class Circle : public Shape {
+  private:
+      double radius;
+  public:
+      Circle(double r) : radius(r) {}
+      double area() const override {
+          return 3.14159 * radius * radius;
+      }
+  };
+
+  class Rectangle : public Shape {
+  private:
+      double width, height;
+  public:
+      Rectangle(double w, double h) : width(w), height(h) {}
+      double area() const override {
+          return width * height;
+      }
+  };
+
+  int main() {
+      Shape* shapes[] = { new Circle(5.0), new Rectangle(4.0, 6.0) };
+      for (const Shape* s : shapes) {
+          std::cout << "Area: " << s->area() << std::endl;
+          delete s;
+      }
+      return 0;
+  }
   ```
+  **Вывод**:
+  ```
+  Area: 78.5397
+  Area: 24
+  ```
+  **Пояснение**:  
+  Указатели на `Shape` вызывают правильные реализации `area` для `Circle` и `Rectangle` благодаря виртуальным функциям. Это позволяет работать с разными типами через единый интерфейс.
 
-#### 21. Класс vector.
-
-- **Пример**:
+  **Пример статического полиморфизма**:
   ```cpp
-  std::vector<int> v = {1, 2, 3};
-  v.push_back(4);
-  std::sort(v.begin(), v.end());
+  #include <iostream>
+  template<typename T>
+  T max(T a, T b) { // Шаблон
+      return a > b ? a : b;
+  }
+
+  int max(int a, int b) { // Перегрузка
+      std::cout << "Int version\n";
+      return a > b ? a : b;
+  }
+
+  int main() {
+      std::cout << max(5, 3) << std::endl; // Int version, 5
+      std::cout << max(5.5, 3.3) << std::endl; // 5.5
+      return 0;
+  }
   ```
+  **Пояснение**:  
+  Статический полиморфизм определяется на этапе компиляции, что делает его более эффективным, но менее гибким, чем динамический.
+
+---
+
+#### 2. Шаблонные функции. Определение, явная специализация. Особенности компиляции.
+
+**Определение**:  
+Шаблонная функция — это функция, параметризованная типами или значениями, позволяющая писать обобщенный код, который работает с разными типами данных. Шаблоны повышают переиспользуемость кода и типобезопасность.
+
+**Компоненты шаблонной функции**:
+- Ключевое слово `template`.
+- Параметры шаблона: типы (`typename T`) или значения (`int N`).
+- Тело функции, использующее параметры шаблона.
+
+**Пример**:
+```cpp
+#include <iostream>
+template<typename T>
+T max(T a, T b) {
+    return a > b ? a : b;
+}
+
+int main() {
+    std::cout << max(5, 3) << std::endl; // 5
+    std::cout << max(5.5, 3.3) << std::endl; // 5.5
+    std::cout << max('a', 'b') << std::endl; // b
+    return 0;
+}
+```
+**Пояснение**:  
+Компилятор генерирует версии функции для каждого используемого типа (`int`, `double`, `char`) при инстанцировании.
+
+**Явная специализация**:  
+Специализация позволяет определить конкретную реализацию шаблонной функции для определенного типа, переопределяя общий шаблон.
+
+**Пример специализации**:
+```cpp
+#include <iostream>
+#include <cstring>
+template<typename T>
+T max(T a, T b) {
+    return a > b ? a : b;
+}
+
+// Явная специализация для const char*
+template<>
+const char* max<const char*>(const char* a, const char* b) {
+    return strcmp(a, b) > 0 ? a : b;
+}
+
+int main() {
+    std::cout << max(5, 3) << std::endl; // 5
+    std::cout << max("apple", "banana") << std::endl; // banana
+    return 0;
+}
+```
+**Пояснение**:  
+Для `const char*` используется специальная реализация с `strcmp`, так как общий шаблон не подходит для строк.
+
+**Особенности компиляции**:
+- **Инстанцирование**: Код шаблона не компилируется, пока не используется с конкретным типом. Компилятор создает экземпляр функции для каждого типа.
+- **Расположение кода**: Определение шаблонной функции обычно помещается в заголовочный файл, так как компилятор должен видеть полный код при инстанцировании.
+- **Ошибки компиляции**: Ошибки в шаблонах выявляются только при инстанцировании, что может усложнить отладку.
+- **Code bloat**: Многократное инстанцирование для разных типов увеличивает размер исполняемого файла.
+
+**Пример ошибки**:
+```cpp
+template<typename T>
+void func(T x) {
+    x.someMethod(); // Ошибка, если T не имеет someMethod
+}
+```
+Ошибка возникнет только при вызове, например, `func<int>(5)`.
+
+**Пояснение**:  
+Шаблонные функции — мощный инструмент для обобщенного программирования, но требуют осторожности из-за особенностей компиляции и потенциального увеличения размера кода.
+
+---
+
+#### 3. Шаблон класса. Шаблонные функции внутри шаблонного класса. Особенности компиляции.
+
+**Определение**:  
+Шаблон класса — это класс, параметризованный типами или значениями, позволяющий создавать обобщенные структуры данных. Шаблонные функции внутри таких классов также могут быть параметризованы.
+
+**Компоненты шаблона класса**:
+- Объявление шаблона: `template<typename T>`.
+- Поля и методы, использующие параметры шаблона.
+
+**Пример шаблона класса**:
+```cpp
+#include <iostream>
+template<typename T>
+class Box {
+private:
+    T value;
+public:
+    Box(T v) : value(v) {}
+    void set(T v) { value = v; }
+    T get() const { return value; }
+};
+
+int main() {
+    Box<int> intBox(42);
+    Box<double> doubleBox(3.14);
+    std::cout << intBox.get() << " " << doubleBox.get() << std::endl; // 42 3.14
+    return 0;
+}
+```
+**Пояснение**:  
+Класс `Box` создается для каждого типа (`int`, `double`) при инстанцировании.
+
+**Шаблонные функции внутри шаблонного класса**:
+Шаблонный класс может содержать шаблонные методы, которые имеют собственные параметры шаблона.
+
+**Пример**:
+```cpp
+#include <iostream>
+template<typename T>
+class Container {
+private:
+    T data;
+public:
+    Container(T d) : data(d) {}
+    // Шаблонный метод
+    template<typename U>
+    void combine(U other) {
+        std::cout << data << " + " << other << std::endl;
+    }
+};
+
+int main() {
+    Container<int> c(10);
+    c.combine(5.5); // 10 + 5.5
+    c.combine("text"); // 10 + text
+    return 0;
+}
+```
+**Пояснение**:  
+Метод `combine` принимает любой тип `U`, что делает класс более гибким.
+
+**Явная специализация класса**:
+Аналогично функциям, класс можно специализировать для конкретного типа.
+
+**Пример**:
+```cpp
+#include <iostream>
+template<typename T>
+class Storage {
+public:
+    void store(T x) { std::cout << "Generic: " << x << std::endl; }
+};
+
+// Специализация для const char*
+template<>
+class Storage<const char*> {
+public:
+    void store(const char* x) { std::cout << "String: " << x << std::endl; }
+};
+
+int main() {
+    Storage<int> intStore;
+    Storage<const char*> strStore;
+    intStore.store(42); // Generic: 42
+    strStore.store("Hello"); // String: Hello
+    return 0;
+}
+```
+
+**Особенности компиляции**:
+- Аналогично шаблонным функциям, код шаблонного класса компилируется при инстанцировании.
+- Определения методов шаблонного класса обычно включаются в заголовочный файл.
+- Возможен **частичный специализация** для групп типов:
+  ```cpp
+  template<typename T>
+  class Pair<T, T> { /* Специализация для одинаковых типов */ };
+  ```
+- Ошибки компиляции возникают только при использовании конкретного типа.
+
+**Пояснение**:  
+Шаблоны классов широко используются в стандартной библиотеке (например, `std::vector`, `std::map`). Они требуют тщательной работы с заголовочными файлами и понимания инстанцирования.
+
+---
+
+#### 4. Конструктор и деструктор. Конструкторы по умолчанию, копирования, оператор присваивания. Различный синтаксис инициализации объекта (a=, a(), a{}). Однородная инициализация структур. Отличие присваивания и инициализации.
+
+**Определение**:  
+- **Конструктор**: Специальный метод, вызываемый при создании объекта для инициализации его состояния.
+- **Деструктор**: Специальный метод, вызываемый при уничтожении объекта для освобождения ресурсов.
+- **Оператор присваивания**: Метод, определяющий поведение присваивания одного объекта другому.
+
+**Типы конструкторов**:
+1. **Конструктор по умолчанию**: `Class()`. Создает объект без аргументов.
+2. **Конструктор с параметрами**: `Class(T arg)`. Инициализирует объект с заданными значениями.
+3. **Конструктор копирования**: `Class(const Class& other)`. Создает копию существующего объекта.
+4. **Конструктор перемещения** (C++11): `Class(Class&& other) noexcept`. Переносит ресурсы.
+
+**Пример конструкторов и деструктора**:
+```cpp
+#include <iostream>
+class Resource {
+private:
+    int* data;
+public:
+    // Конструктор по умолчанию
+    Resource() : data(new int(0)) {
+        std::cout << "Default constructor\n";
+    }
+    // Конструктор с параметром
+    Resource(int v) : data(new int(v)) {
+        std::cout << "Parameterized constructor\n";
+    }
+    // Конструктор копирования
+    Resource(const Resource& other) : data(new int(*other.data)) {
+        std::cout << "Copy constructor\n";
+    }
+    // Конструктор перемещения
+    Resource(Resource&& other) noexcept : data(other.data) {
+        other.data = nullptr;
+        std::cout << "Move constructor\n";
+    }
+    // Деструктор
+    ~Resource() {
+        delete data;
+        std::cout << "Destructor\n";
+    }
+    // Оператор присваивания копирования
+    Resource& operator=(const Resource& other) {
+        if (this != &other) {
+            delete data;
+            data = new int(*other.data);
+        }
+        std::cout << "Copy assignment\n";
+        return *this;
+    }
+    int get() const { return data ? *data : 0; }
+};
+
+int main() {
+    Resource r1; // Default constructor
+    Resource r2(42); // Parameterized constructor
+    Resource r3 = r2; // Copy constructor
+    r1 = r3; // Copy assignment
+    Resource r4 = std::move(r2); // Move constructor
+    std::cout << r3.get() << std::endl; // 42
+    return 0; // Деструкторы для всех объектов
+}
+```
+
+**Синтаксис инициализации**:
+1. **Копирование**: `Class a = b;` или `Class a(b);`.
+2. **Прямая инициализация**: `Class a(args);`.
+3. **Однородная инициализация** (C++11): `Class a{args};`.
+   - Для структур: `struct S { int x, y; }; S s{1, 2};`.
+4. **Инициализация по умолчанию**: `Class a{};`.
+
+**Пример синтаксиса**:
+```cpp
+#include <iostream>
+struct Point {
+    int x, y;
+    Point(int a = 0, int b = 0) : x(a), y(b) {}
+    void print() const { std::cout << x << ", " << y << std::endl; }
+};
+
+int main() {
+    Point p1 = Point(1, 2); // Копирование
+    Point p2(3, 4); // Прямая
+    Point p3{5, 6}; // Однородная
+    Point p4{}; // По умолчанию (0, 0)
+    p1.print(); // 1, 2
+    p2.print(); // 3, 4
+    p3.print(); // 5, 6
+    p4.print(); // 0, 0
+    return 0;
+}
+```
+
+**Однородная инициализация структур**:
+- Позволяет инициализировать поля структуры в порядке их объявления.
+- Защищает от ошибок, связанных с неявным преобразованием типов.
+```cpp
+struct Data {
+    int id;
+    double value;
+};
+Data d{1, 3.14}; // id = 1, value = 3.14
+```
+
+**Отличие присваивания и инициализации**:
+- **Инициализация**: Создание объекта с заданным начальным состоянием (вызывается конструктор).
+  - Пример: `Resource r(42);` — вызывает конструктор.
+- **Присваивание**: Изменение состояния существующего объекта (вызывается `operator=`).
+  - Пример: `r = Resource(10);` — вызывает конструктор для временного объекта и оператор присваивания.
+- Инициализация более эффективна, так как избегает временных объектов в некоторых случаях.
+
+**Пояснение**:  
+Конструкторы и деструкторы управляют жизненным циклом объекта. Однородная инициализация (C++11) унифицирует синтаксис и повышает безопасность. Правильная реализация специальных функций (правило пяти) критически важна для классов с ресурсами.
+
+---
+
+#### 5. Правосторонние ссылки, назначение, перегрузка функций с их применением. Перемещение. Конструктор перемещения. Оператор присваивания с перемещением. Функция std::move.
+
+**Определение**:  
+- **Правосторонняя ссылка** (`T&&`): Ссылка, связывающаяся с временными объектами (rvalue). Введена в C++11 для поддержки семантики перемещения.
+- **Семантика перемещения**: Перенос ресурсов (например, указателей) из одного объекта в другой без копирования, что повышает производительность.
+- **std::move**: Утилита, приводящая объект к rvalue, позволяя использовать перемещение.
+
+**Назначение правосторонних ссылок**:
+- Оптимизация операций с временными объектами.
+- Реализация перемещающих конструкторов и операторов присваивания.
+- Уменьшение ненужного копирования в функциях и контейнерах.
+
+**Пример правосторонних ссылок**:
+```cpp
+#include <iostream>
+void process(int& lvalue) { std::cout << "lvalue: " << lvalue << std::endl; }
+void process(int&& rvalue) { std::cout << "rvalue: " << rvalue << std::endl; }
+
+int main() {
+    int x = 5;
+    process(x); // lvalue: 5
+    process(10); // rvalue: 10
+    process(std::move(x)); // rvalue: 5
+    return 0;
+}
+```
+
+**Перегрузка функций**:
+Правосторонние ссылки позволяют перегрузить функции для обработки lvalue и rvalue отдельно.
+
+**Пример перегрузки**:
+```cpp
+#include <iostream>
+#include <string>
+class String {
+private:
+    char* data;
+public:
+    String(const char* s) {
+        data = new char[strlen(s) + 1];
+        strcpy(data, s);
+    }
+    // Перегрузка для lvalue
+    void append(const String& other) {
+        std::cout << "Copy append\n";
+        char* newData = new char[strlen(data) + strlen(other.data) + 1];
+        strcpy(newData, data);
+        strcat(newData, other.data);
+        delete[] data;
+        data = newData;
+    }
+    // Перегрузка для rvalue
+    void append(String&& other) {
+        std::cout << "Move append\n";
+        delete[] data;
+        data = other.data;
+        other.data = nullptr;
+    }
+    ~String() { delete[] data; }
+    const char* get() const { return data; }
+};
+
+int main() {
+    String s1("Hello");
+    String s2("World");
+    s1.append(s2); // Copy append
+    s1.append(String("!")); // Move append
+    std::cout << s1.get() << std::endl; // HelloWorld!
+    return 0;
+}
+```
+
+**Конструктор перемещения**:
+Переносит ресурсы из временного объекта, обнуляя исходный.
+
+**Оператор присваивания с перемещением**:
+Аналогично перемещает ресурсы, освобождая старые.
+
+**Пример**:
+```cpp
+#include <iostream>
+#include <utility>
+class Resource {
+private:
+    int* data;
+public:
+    Resource(int v = 0) : data(new int(v)) { std::cout << "Constructor\n"; }
+    Resource(const Resource& other) : data(new int(*other.data)) {
+        std::cout << "Copy constructor\n";
+    }
+    // Конструктор перемещения
+    Resource(Resource&& other) noexcept : data(other.data) {
+        other.data = nullptr;
+        std::cout << "Move constructor\n";
+    }
+    // Оператор присваивания с перемещением
+    Resource& operator=(Resource&& other) noexcept {
+        if (this != &other) {
+            delete data;
+            data = other.data;
+            other.data = nullptr;
+            std::cout << "Move assignment\n";
+        }
+        return *this;
+    }
+    ~Resource() {
+        delete data;
+        std::cout << "Destructor\n";
+    }
+    int get() const { return data ? *data : 0; }
+};
+
+int main() {
+    Resource r1(10);
+    Resource r2 = std::move(r1); // Move constructor
+    std::cout << r2.get() << std::endl; // 10
+    Resource r3;
+    r3 = std::move(r2); // Move assignment
+    std::cout << r3.get() << std::endl; // 10
+    return 0;
+}
+```
+
+**std::move**:
+- Приводит lvalue к rvalue, сигнализируя, что объект можно перемещать.
+- Не выполняет фактического перемещения, а лишь позволяет компилятору выбрать соответствующую перегрузку.
+
+**Пример std::move**:
+```cpp
+#include <vector>
+#include <utility>
+int main() {
+    std::vector<int> v1 = {1, 2, 3};
+    std::vector<int> v2 = std::move(v1); // Перемещение
+    // v1 пустой, v2 содержит {1, 2, 3}
+    return 0;
+}
+```
+
+**Пояснение**:  
+Семантика перемещения и правосторонние ссылки революционизировали производительность в С++11, особенно для контейнеров и классов с ресурсами. `noexcept` важен для оптимизации.
+
+---
+
+#### 6. Инкапсуляция данных. Уровни доступа к данным и функциям класса. Указатель this.
+
+**Определение**:  
+Инкапсуляция данных — это сокрытие внутренней реализации класса и предоставление контролируемого доступа через публичный интерфейс. Уровни доступа и указатель `this` играют ключевую роль в реализации.
+
+**Уровни доступа**:
+1. **public**: Доступен всем.
+2. **protected**: Доступен внутри класса и в производных классах.
+3. **private**: Доступен только внутри класса.
+
+**Пример**:
+```cpp
+#include <iostream>
+class Employee {
+private:
+    std::string name; // Доступ только внутри класса
+    double salary;
+protected:
+    int id; // Доступ в производных классах
+public:
+    Employee(const std::string& n, double s, int i) : name(n), salary(s), id(i) {}
+    void setSalary(double s) { // Контролируемый доступ
+        if (s > 0) salary = s;
+    }
+    double getSalary() const { return salary; }
+    std::string getName() const { return name; }
+};
+
+class Manager : public Employee {
+public:
+    Manager(const std::string& n, double s, int i) : Employee(n, s, i) {}
+    void setId(int newId) { id = newId; } // Доступ к protected
+    // void changeName() { name = "New"; } // Ошибка: name private
+};
+
+int main() {
+    Manager m("Alice", 5000.0, 101);
+    m.setSalary(6000.0);
+    m.setId(102);
+    std::cout << m.getName() << ": " << m.getSalary() << std::endl; // Alice: 6000
+    return 0;
+}
+```
+
+**Указатель this**:
+- `this` — указатель на текущий объект, доступный в нестатических методах класса.
+- Используется для:
+  - Разрешения конфликтов имен (например, поле vs параметр).
+  - Возврата `*this` для цепного вызова.
+  - Передачи объекта в другие функции.
+
+**Пример с this**:
+```cpp
+#include <iostream>
+class Counter {
+private:
+    int value;
+public:
+    Counter(int v = 0) : value(v) {}
+    Counter& increment() {
+        ++value;
+        return *this; // Для цепного вызова
+    }
+    Counter& setValue(int value) {
+        this->value = value; // Разрешение конфликта имен
+        return *this;
+    }
+    int getValue() const { return value; }
+};
+
+int main() {
+    Counter c;
+    c.setValue(5).increment().increment();
+    std::cout << c.getValue() << std::endl; // 7
+    return 0;
+}
+```
+
+**Пояснение**:  
+Инкапсуляция защищает данные, а `this` упрощает работу с объектом внутри класса. Уровни доступа позволяют гибко управлять видимостью членов.
+
+---
+
+#### 7. Композиция классов. Изложение классов в памяти и порядок инициализации/зачистки. Преамбула конструктора. Принцип действия автоматически создаваемых компилятором конструктора копирования, конструктора по умолчанию, копирующего оператора присваивания.
+
+**Определение**:  
+Композиция классов — это включение объектов одного класса как полей другого класса, создавая отношение "имеет". Это альтернатива наследованию для построения сложных объектов.
+
+**Пример композиции**:
+```cpp
+#include <iostream>
+class Engine {
+private:
+    int power;
+public:
+    Engine(int p) : power(p) { std::cout << "Engine created\n"; }
+    ~Engine() { std::cout << "Engine destroyed\n"; }
+    int getPower() const { return power; }
+};
+
+class Car {
+private:
+    Engine engine; // Композиция
+    std::string model;
+public:
+    Car(const std::string& m, int p) : engine(p), model(m) {
+        std::cout << "Car created\n";
+    }
+    ~Car() { std::cout << "Car destroyed\n"; }
+    void display() const {
+        std::cout << model << " with " << engine.getPower() << " hp\n";
+    }
+};
+
+int main() {
+    Car car("Toyota", 200);
+    car.display(); // Toyota with 200 hp
+    return 0;
+}
+```
+**Вывод**:
+```
+Engine created
+Car created
+Toyota with 200 hp
+Car destroyed
+Engine destroyed
+```
+
+**Изложение в памяти**:
+- Объект `Car` содержит:
+  - Поля `engine` (включая его поля, например, `power`).
+  - Поле `model`.
+- Поля располагаются последовательно с учетом выравнивания (padding).
+- Размер `Car` = размер `Engine` + размер `std::string` + padding.
+
+**Порядок инициализации**:
+- Поля инициализируются в порядке их **объявления** в классе, а не в порядке в преамбуле конструктора.
+- В примере: сначала `engine`, затем `model`.
+- Преамбула конструктора (`: engine(p), model(m)`) задает значения для инициализации.
+
+**Порядок зачистки**:
+- Деструкторы вызываются в **обратном порядке** объявления полей.
+- В примере: сначала `~Car`, затем `~Engine`.
+
+**Преамбула конструктора**:
+- Список инициализации (`: field(value)`) используется для инициализации полей и базовых классов.
+- Более эффективна, чем присваивание в теле конструктора, так как избегает лишних операций.
+
+**Автоматически сгенерированные функции**:
+1. **Конструктор по умолчанию**:
+   - Инициализирует поля значениями по умолчанию (для встроенных типов — не определено).
+   - Пример: `Car() : engine(), model() {}`.
+2. **Конструктор копирования**:
+   - Копирует каждое поле, вызывая копирующие конструкторы для объектов.
+   - Пример: `Car(const Car& other) : engine(other.engine), model(other.model) {}`.
+3. **Копирующий оператор присваивания**:
+   - Копирует поля, вызывая операторы присваивания для объектов.
+   - Пример: `Car& operator=(const Car& other) { engine = other.engine; model = other.model; return *this; }`.
+
+**Пример автоматических функций**:
+```cpp
+#include <iostream>
+class AutoResource {
+public:
+    AutoResource() { std::cout << "Default\n"; }
+    AutoResource(const AutoResource&) { std::cout << "Copy\n"; }
+    AutoResource& operator=(const AutoResource&) {
+        std::cout << "Copy assign\n";
+        return *this;
+    }
+    ~AutoResource() { std::cout << "Destructor\n"; }
+};
+
+int main() {
+    AutoResource r1; // Default
+    AutoResource r2 = r1; // Copy
+    r1 = r2; // Copy assign
+    return 0; // Destructor x2
+}
+```
+
+**Пояснение**:  
+Композиция создает тесную связь между классами, где время жизни компонента зависит от владельца. Автоматические функции удобны, но требуют ручной реализации для классов с ресурсами.
+
+---
+
+#### 8. Наследование классов. Изложение классов в памяти и порядок инициализации/зачистки. Преамбула конструктора. Принцип действия автоматически создаваемых компилятором конструктора копирования, конструктора по умолчанию, копирующего оператора присваивания.
+
+**Определение**:  
+Наследование позволяет производному классу унаследовать поля и методы базового класса, расширяя или переопределяя их.
+
+**Пример наследования**:
+```cpp
+#include <iostream>
+class Base {
+protected:
+    int baseData;
+public:
+    Base(int d) : baseData(d) { std::cout << "Base created\n"; }
+    ~Base() { std::cout << "Base destroyed\n"; }
+    void display() const { std::cout << "Base: " << baseData << std::endl; }
+};
+
+class Derived : public Base {
+private:
+    int derivedData;
+public:
+    Derived(int b, int d) : Base(b), derivedData(d) {
+        std::cout << "Derived created\n";
+    }
+    ~Derived() { std::cout << "Derived destroyed\n"; }
+    void display() const {
+        Base::display();
+        std::cout << "Derived: " << derivedData << std::endl;
+    }
+};
+
+int main() {
+    Derived d(10, 20);
+    d.display();
+    return 0;
+}
+```
+**Вывод**:
+```
+Base created
+Derived created
+Base: 10
+Derived: 20
+Derived destroyed
+Base destroyed
+```
+
+**Изложение в памяти**:
+- Объект `Derived` содержит:
+  - Поля базового класса `Base` (`baseData`).
+  - Поля производного класса (`derivedData`).
+- Поля `Base` располагаются перед полями `Derived` в памяти.
+- Размер `Derived` = размер `Base` + размер `Derived` + padding.
+
+**Порядок инициализации**:
+- Базовый класс инициализируется **первым** (в преамбуле конструктора `Derived`).
+- Затем инициализируются поля производного класса в порядке их объявления.
+- В примере: `Base::baseData`, затем `derivedData`.
+
+**Порядок зачистки**:
+- Деструкторы вызываются в **обратном порядке**:
+  - Сначала `~Derived`.
+  - Затем `~Base`.
+
+**Преамбула конструктора**:
+- Используется для вызова конструктора базового класса и инициализации полей.
+- Пример: `: Base(b), derivedData(d)`.
+
+**Автоматически сгенерированные функции**:
+1. **Конструктор по умолчанию**:
+   - Вызывает конструктор по умолчанию базового класса и инициализирует поля производного.
+   - Пример: `Derived() : Base() {}`.
+2. **Конструктор копирования**:
+   - Копирует базовый класс (через его копирующий конструктор) и поля производного.
+   - Пример: `Derived(const Derived& other) : Base(other), derivedData(other.derivedData) {}`.
+3. **Копирующий оператор присваивания**:
+   - Копирует базовый класс и поля производного.
+   - Пример: `Derived& operator=(const Derived& other) { Base::operator=(other); derivedData = other.derivedData; return *this; }`.
+
+**Пример**:
+```cpp
+#include <iostream>
+class AutoBase {
+public:
+    AutoBase() { std::cout << "Base default\n"; }
+    AutoBase(const AutoBase&) { std::cout << "Base copy\n"; }
+    AutoBase& operator=(const AutoBase&) {
+        std::cout << "Base assign\n";
+        return *this;
+    }
+    ~AutoBase() { std::cout << "Base destructor\n"; }
+};
+
+class AutoDerived : public AutoBase {};
+
+int main() {
+    AutoDerived d1; // Base default
+    AutoDerived d2 = d1; // Base copy
+    d1 = d2; // Base assign
+    return 0; // Base destructor x2
+}
+```
+
+**Пояснение**:  
+Наследование создает иерархию, где порядок инициализации и зачистки строго определен. Автоматические функции работают корректно для простых классов, но требуют ручной реализации для сложных.
+
+---
+
+#### 9. Доступ к полям и методам родительского класса при public наследовании, смысл модификаторов доступа private, public, protected.
+
+**Определение**:  
+При `public` наследовании производный класс сохраняет доступ к `public` и `protected` членам базового класса, но модификаторы доступа определяют, кто может использовать эти члены.
+
+**Модификаторы доступа**:
+1. **public**: Члены доступны всем.
+2. **protected**: Члены доступны внутри класса и в производных классах.
+3. **private**: Члены доступны только внутри класса.
+
+**Правила при public наследовании**:
+- `public` члены базового остаются `public` в производном.
+- `protected` члены остаются `protected`.
+- `private` члены недоступны в производном классе напрямую.
+
+**Пример**:
+```cpp
+#include <iostream>
+class Base {
+private:
+    int privateData = 1; // Недоступно в производном
+protected:
+    int protectedData = 2; // Доступно в производном
+public:
+    int publicData = 3; // Доступно всем
+    void display() const {
+        std::cout << privateData << " " << protectedData << " " << publicData << std::endl;
+    }
+};
+
+class Derived : public Base {
+public:
+    void modify() {
+        // privateData = 10; // Ошибка
+        protectedData = 20; // OK
+        publicData = 30; // OK
+    }
+};
+
+int main() {
+    Derived d;
+    d.modify();
+    d.display(); // 1 20 30
+    std::cout << d.publicData << std::endl; // 30
+    // std::cout << d.protectedData; // Ошибка
+    return 0;
+}
+```
+
+**Пояснение**:  
+`public` наследование сохраняет интерфейс базового класса, но ограничивает доступ к `private` данным. `protected` позволяет производным классам работать с данными базового класса, сохраняя инкапсуляцию.
+
+---
+
+#### 10. Различные значения классификатора const при описании класса.
+
+**Определение**:  
+Ключевое слово `const` в классах используется для обеспечения неизменяемости объектов, методов или возвращаемых значений, предотвращая нежелательные модификации.
+
+**Значения const**:
+1. **const методы**: Не изменяют объект (`void func() const;`).
+   - Вызываются для `const` объектов.
+2. **const поля**: Неизменяемые после инициализации (`const int x;`).
+3. **const объекты**: Могут вызывать только `const` методы (`const Class obj;`).
+4. **const в возвращаемом значении**: Защищает возвращаемые данные (`const T& get() const;`).
+5. **const указатели/ссылки**: Ограничивают модификацию через указатель или ссылку.
+
+**Пример**:
+```cpp
+#include <iostream>
+class Example {
+private:
+    const int id; // const поле
+    int value;
+public:
+    Example(int i, int v) : id(i), value(v) {}
+    // const метод
+    int getId() const { return id; }
+    // const возвращаемое значение
+    const int& getValue() const { return value; }
+    void setValue(int v) { value = v; }
+};
+
+int main() {
+    const Example e(1, 10); // const объект
+    std::cout << e.getId() << " " << e.getValue() << std::endl; // 1 10
+    // e.setValue(20); // Ошибка: const объект
+    // e.getValue() = 20; // Ошибка: const возвращаемое значение
+    return 0;
+}
+```
+
+**Пояснение**:  
+`const` повышает безопасность и читаемость кода, явно указывая, что не изменяется. `mutable` позволяет обойти физическую константность для логической.
+
+---
+
+#### 11. Виртуальные функции. Виртуальные деструкторы. Абстрактные классы.
+
+**Определение**:  
+- **Виртуальные функции**: Функции, объявленные с `virtual`, обеспечивают динамическое связывание (выбор реализации во время выполнения).
+- **Виртуальный деструктор**: Гарантирует вызов деструктора производного класса при удалении через указатель на базовый.
+- **Абстрактный класс**: Класс с хотя бы одной чисто виртуальной функцией (`virtual void func() = 0;`), не может быть инстанцирован.
+
+**Пример**:
+```cpp
+#include <iostream>
+class Base {
+public:
+    virtual void func() { std::cout << "Base func\n"; }
+    virtual void pureFunc() = 0; // Чисто виртуальная
+    virtual ~Base() { std::cout << "Base destructor\n"; }
+};
+
+class Derived : public Base {
+public:
+    void func() override { std::cout << "Derived func\n"; }
+    void pureFunc() override { std::cout << "Derived pureFunc\n"; }
+    ~Derived() override { std::cout << "Derived destructor\n"; }
+};
+
+int main() {
+    Base* ptr = new Derived();
+    ptr->func(); // Derived func
+    ptr->pureFunc(); // Derived pureFunc
+    delete ptr; // Derived destructor, Base destructor
+    // Base b; // Ошибка: абстрактный класс
+    return 0;
+}
+```
+
+**Пояснение**:  
+Виртуальные функции используют таблицу виртуальных функций (vtable) для динамического связывания. Виртуальный деструктор обязателен в полиморфных иерархиях. Абстрактные классы задают интерфейс.
+
+---
+
+#### 12. Наследование классов. Сокрытие функций. Автоматическое приведение типов указателей и ссылок к родительскому классу.
+
+**Определение**:  
+- **Сокрытие функций**: Метод производного класса с тем же именем, но другой сигнатурой, скрывает метод базового.
+- **Автоматическое приведение**: Указатели и ссылки на производный класс приводятся к базовому без явного приведения.
+
+**Пример сокрытия**:
+```cpp
+#include <iostream>
+class Base {
+public:
+    void func(int x) { std::cout << "Base: " << x << std::endl; }
+};
+
+class Derived : public Base {
+public:
+    void func(double x) { std::cout << "Derived: " << x << std::endl; }
+};
+
+int main() {
+    Derived d;
+    d.func(5.5); // Derived: 5.5
+    // d.func(5); // Ошибка: func(int) скрыт
+    d.Base::func(5); // Base: 5
+    return 0;
+}
+```
+
+**Пример приведения типов**:
+```cpp
+#include <iostream>
+class Base {
+public:
+    virtual void func() { std::cout << "Base\n"; }
+};
+
+class Derived : public Base {
+public:
+    void func() override { std::cout << "Derived\n"; }
+};
+
+int main() {
+    Derived d;
+    Base* ptr = &d; // Автоматическое приведение
+    Base& ref = d; // Автоматическое приведение
+    ptr->func(); // Derived
+    ref.func(); // Derived
+    return 0;
+}
+```
+
+**Пояснение**:  
+Сокрытие может привести к ошибкам, если не использовать `override`. Приведение к базовому классу безопасно и используется в полиморфизме.
+
+---
+
+#### 13. Перегрузка операторов членов класса. Бинарные и унарные операторы. Ограничения при перегрузке операторов членов класса.
+
+**Определение**:  
+Перегрузка операторов позволяет определить поведение операторов (`+`, `-`, `=`) для пользовательских типов. Операторы-члены определяются внутри класса.
+
+**Типы операторов**:
+- **Бинарные**: Два операнда (`a + b`).
+- **Унарные**: Один операнд (`-a`, `++a`).
+
+**Пример**:
+```cpp
+#include <iostream>
+class Complex {
+private:
+    double real, imag;
+public:
+    Complex(double r = 0, double i = 0) : real(r), imag(i) {}
+    // Бинарный оператор +
+    Complex operator+(const Complex& other) const {
+        return Complex(real + other.real, imag + other.imag);
+    }
+    // Унарный оператор -
+    Complex operator-() const {
+        return Complex(-real, -imag);
+    }
+    void print() const {
+        std::cout << real << " + " << imag << "i\n";
+    }
+};
+
+int main() {
+    Complex a(1, 2), b(3, 4);
+    Complex c = a + b; // operator+
+    c.print(); // 4 + 6i
+    Complex d = -a; // operator-
+    d.print(); // -1 + -2i
+    return 0;
+}
+```
+
+**Ограничения**:
+- Нельзя перегрузить: `::`, `.`, `.*`, `sizeof`, `typeid`.
+- Нельзя изменить приоритет или ассоциативность.
+- Один операнд должен быть объектом класса.
+- Нельзя создавать новые операторы.
+
+**Пояснение**:  
+Перегрузка операторов делает код интуитивным, но требует соблюдения семантики операторов (например, `+` должно быть коммутативным).
+
+---
+
+#### 14. Перегрузка операторов в виде внешних функций. Бинарные и унарные операторы.
+
+**Определение**:  
+Внешние операторы определяются вне класса, часто как `friend` функции, чтобы иметь доступ к `private` членам. Используются, когда первый операнд не является объектом класса.
+
+**Пример**:
+```cpp
+#include <iostream>
+class Complex {
+private:
+    double real, imag;
+public:
+    Complex(double r = 0, double i = 0) : real(r), imag(i) {}
+    friend Complex operator+(double x, const Complex& c); // Внешний бинарный
+    friend Complex operator-(const Complex& c); // Внешний унарный
+    void print() const { std::cout << real << " + " << imag << "i\n"; }
+};
+
+Complex operator+(double x, const Complex& c) {
+    return Complex(x + c.real, c.imag);
+}
+
+Complex operator-(const Complex& c) {
+    return Complex(-c.real, -c.imag);
+}
+
+int main() {
+    Complex c(1, 2);
+    Complex d = 5.0 + c; // Внешний +
+    d.print(); // 6 + 2i
+    Complex e = -c; // Внешний -
+    e.print(); // -1 + -2i
+    return 0;
+}
+```
+
+**Пояснение**:  
+Внешние операторы полезны для симметричных операций или когда требуется доступ к не-классовым типам. `friend` предоставляет доступ к приватным данным.
+
+---
+
+#### 15. Перегрузка арифметических операторов в виде внешних функций. Оптимизация вычисления арифметических выражений с пользовательскими типами с применением перемещения.
+
+**Определение**:  
+Перегрузка арифметических операторов как внешних функций позволяет оптимизировать выражения, особенно с использованием семантики перемещения для временных объектов.
+
+**Пример с перемещением**:
+```cpp
+#include <iostream>
+#include <utility>
+class Matrix {
+private:
+    int* data;
+    size_t size;
+public:
+    Matrix(size_t s) : size(s), data(new int[s]) {
+        std::cout << "Constructor\n";
+    }
+    Matrix(const Matrix& other) : size(other.size), data(new int[size]) {
+        std::copy(other.data, other.data + size, data);
+        std::cout << "Copy constructor\n";
+    }
+    Matrix(Matrix&& other) noexcept : size(other.size), data(other.data) {
+        other.data = nullptr;
+        other.size = 0;
+        std::cout << "Move constructor\n";
+    }
+    ~Matrix() {
+        delete[] data;
+        std::cout << "Destructor\n";
+    }
+    friend Matrix operator+(Matrix a, const Matrix& b) { // Копирование a
+        for (size_t i = 0; i < a.size; ++i) {
+            a.data[i] += b.data[i];
+        }
+        return a; // Возвращаем a, оптимизируется RVO
+    }
+    friend Matrix operator+(Matrix&& a, const Matrix& b) { // Перемещение a
+        std::cout << "Move + operator\n";
+        for (size_t i = 0; i < a.size; ++i) {
+            a.data[i] += b.data[i];
+        }
+        return std::move(a); // Перемещаем a
+    }
+};
+
+int main() {
+    Matrix m1(2), m2(2);
+    Matrix m3 = m1 + m2; // Копирование
+    Matrix m4 = Matrix(2) + m2; // Перемещение
+    return 0;
+}
+```
+
+**Оптимизация**:
+- Перегрузка для `Matrix&&` избегает копирования временного объекта.
+- `std::move` сигнализирует, что объект можно перемещать.
+- RVO дополнительно устраняет копирование возвращаемого значения.
+
+**Пояснение**:  
+Перемещение снижает накладные расходы для временных объектов, что особенно важно для больших структур данных, таких как матрицы.
+
+---
+
+#### 16. Дружественные функции класса. Перегрузка оператора потокового вывода.
+
+**Определение**:  
+Дружественная функция (`friend`) имеет доступ к `private` и `protected` членам класса, но не является его членом. Используется для операций, требующих доступа к внутренней реализации.
+
+**Пример оператора вывода**:
+```cpp
+#include <iostream>
+class Point {
+private:
+    int x, y;
+public:
+    Point(int a, int b) : x(a), y(b) {}
+    // Дружественная функция
+    friend std::ostream& operator<<(std::ostream& os, const Point& p);
+};
+
+std::ostream& operator<<(std::ostream& os, const Point& p) {
+    os << "(" << p.x << ", " << p.y << ")";
+    return os;
+}
+
+int main() {
+    Point p(1, 2);
+    std::cout << p << std::endl; // (1, 2)
+    return 0;
+}
+```
+
+**Пояснение**:  
+Дружественные функции упрощают реализацию операторов ввода-вывода, сохраняя инкапсуляцию. Оператор `<<` возвращает `ostream&` для цепного вызова.
+
+---
+
+#### 17. Функторы как обобщение функций.
+
+**Определение**:  
+Функтор — это объект класса с перегруженным `operator()`, который можно использовать как функцию. Функторы хранят состояние, что делает их более гибкими, чем обычные функции.
+
+**Пример**:
+```cpp
+#include <iostream>
+#include <algorithm>
+#include <vector>
+struct Adder {
+    int offset;
+    Adder(int o) : offset(o) {}
+    int operator()(int x) const { return x + offset; }
+};
+
+int main() {
+    std::vector<int> v = {1, 2, 3};
+    Adder add(10);
+    std::transform(v.begin(), v.end(), v.begin(), add);
+    for (int x : v) {
+        std::cout << x << " "; // 11 12 13
+    }
+    std::cout << std::endl;
+    return 0;
+}
+```
+
+**Пояснение**:  
+Функторы используются в STL-алгоритмах, где требуется настраиваемое поведение с сохранением состояния. Они более мощные, чем указатели на функции.
+
+---
+
+#### 18. Лямбда-функции и захват переменных. Применение со стандартными алгоритмами.
+
+**Определение**:  
+Лямбда-функция — это анонимная функция, определяемая в месте использования. Синтаксис: `[захват](параметры) { тело }`. Лямбды упрощают написание коротких функций.
+
+**Захват переменных**:
+- По значению: `[x]`.
+- По ссылке: `[&x]`.
+- Все по значению: `[=]`.
+- Все по ссылке: `[&]`.
+
+**Пример**:
+```cpp
+#include <iostream>
+#include <algorithm>
+#include <vector>
+int main() {
+    std::vector<int> v = {5, 2, 8, 1};
+    int offset = 10;
+    // Лямбда с захватом
+    std::for_each(v.begin(), v.end(), [offset](int& x) { x += offset; });
+    for (int x : v) {
+        std::cout << x << " "; // 15 12 18 11
+    }
+    std::cout << std::endl;
+    // Сортировка с лямбдой
+    std::sort(v.begin(), v.end(), [](int a, int b) { return a < b; });
+    for (int x : v) {
+        std::cout << x << " "; // 11 12 15 18
+    }
+    std::cout << std::endl;
+    return 0;
+}
+```
+
+**Пояснение**:  
+Лямбды заменяют функторы в простых случаях, интегрируясь с STL-алгоритмами. Захват позволяет использовать внешние переменные, но требует осторожности с временем их жизни.
+
+---
+
+#### 19. Итераторы. Классификация итераторов. Цикл range for.
+
+**Определение**:  
+Итератор — это объект, предоставляющий интерфейс для обхода элементов контейнера. Итераторы абстрагируют доступ к данным, позволяя работать с разными структурами.
+
+**Классификация итераторов**:
+1. **Входные (Input)**: Только чтение, однократный проход (`std::istream_iterator`).
+2. **Выходные (Output)**: Только запись (`std::ostream_iterator`).
+3. **Прямого доступа (Forward)**: Чтение/запись, односторонний проход (`std::forward_list`).
+4. **Двунаправленные (Bidirectional)**: Чтение/запись, проход вперед/назад (`std::list`).
+5. **Случайного доступа (Random Access)**: Чтение/запись, произвольный доступ (`std::vector`, массивы).
+
+**Пример**:
+```cpp
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> v = {1, 2, 3};
+    // Использование итератора
+    for (std::vector<int>::iterator it = v.begin(); it != v.end(); ++it) {
+        *it += 10;
+        std::cout << *it << " "; // 11 12 13
+    }
+    std::cout << std::endl;
+    return 0;
+}
+```
+
+**Цикл range for**:
+- Упрощает обход контейнеров: `for (auto& x : container)`.
+- Требует у контейнера методов `begin()` и `end()`.
+
+**Пример range for**:
+```cpp
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> v = {1, 2, 3};
+    for (int& x : v) {
+        x += 10;
+        std::cout << x << " "; // 11 12 13
+    }
+    std::cout << std::endl;
+    return 0;
+}
+```
+
+**Пояснение**:  
+Итераторы унифицируют доступ к контейнерам, а range for упрощает синтаксис. Случайный доступ наиболее гибок, но менее универсален.
+
+---
+
+#### 20. Стандартная библиотека std. Потоки ввода-вывода. Использование файловых потоков для работы с текстовыми файлами. Перегрузка оператора потокового вывода и ввода (для файлов и потоков cin, cout).
+
+**Определение**:  
+Потоки ввода-вывода в STL (`std::iostream`) предоставляют унифицированный интерфейс для работы с консолью, файлами и строками. Основные классы: `std::istream`, `std::ostream`, `std::iostream`.
+
+**Основные потоки**:
+- `std::cin`: Ввод с клавиатуры.
+- `std::cout`: Вывод на консоль.
+- `std::cerr`: Вывод ошибок.
+
+**Файловые потоки**:
+- `std::ifstream`: Чтение из файла.
+- `std::ofstream`: Запись в файл.
+- `std::fstream`: Чтение и запись.
+
+**Пример файловых потоков**:
+```cpp
+#include <iostream>
+#include <fstream>
+#include <string>
+int main() {
+    // Запись в файл
+    std::ofstream out("output.txt");
+    if (out.is_open()) {
+        out << "Hello, file!\n";
+        out.close();
+    }
+    // Чтение из файла
+    std::ifstream in("output.txt");
+    if (in.is_open()) {
+        std::string line;
+        while (std::getline(in, line)) {
+            std::cout << line << std::endl; // Hello, file!
+        }
+        in.close();
+    }
+    return 0;
+}
+```
+
+**Перегрузка операторов ввода-вывода**:
+```cpp
+#include <iostream>
+class Point {
+private:
+    int x, y;
+public:
+    Point(int a = 0, int b = 0) : x(a), y(b) {}
+    friend std::ostream& operator<<(std::ostream& os, const Point& p);
+    friend std::istream& operator>>(std::istream& is, Point& p);
+};
+
+std::ostream& operator<<(std::ostream& os, const Point& p) {
+    os << "(" << p.x << ", " << p.y << ")";
+    return os;
+}
+
+std::istream& operator>>(std::istream& is, Point& p) {
+    is >> p.x >> p.y;
+    return is;
+}
+
+int main() {
+    Point p;
+    std::cin >> p; // Ввод: 3 4
+    std::cout << p << std::endl; // (3, 4)
+    std::ofstream out("point.txt");
+    out << p;
+    return 0;
+}
+```
+
+**Пояснение**:  
+Потоки обеспечивают гибкость и расширяемость. Перегрузка `<<` и `>>` делает пользовательские типы совместимыми с STL.
+
+---
+
+#### 21. Стандартная библиотека std. Класс vector, особенности выделения памяти. Основные функции члены класса. Работа с алгоритмами стандартной библиотеки на примере класса vector.
+
+**Определение**:  
+`std::vector` — это динамический массив, автоматически управляющий памятью. Он предоставляет быстрый доступ по индексу и гибкое изменение размера.
+
+**Особенности выделения памяти**:
+- **size**: Текущая длина вектора (число элементов).
+- **capacity**: Выделенная память (может быть больше `size`).
+- При добавлении элементов (`push_back`) вектор увеличивает `capacity` (обычно в 1.5–2 раза), копируя данные в новую область.
+- `reserve` позволяет заранее выделить память, избегая перевыделений.
+
+**Основные методы**:
+- `push_back(T)`: Добавляет элемент в конец.
+- `pop_back()`: Удаляет последний элемент.
+- `size()`: Возвращает текущий размер.
+- `capacity()`: Возвращает выделенную память.
+- `resize(n)`: Изменяет размер, добавляя/удаляя элементы.
+- `reserve(n)`: Выделяет память для `n` элементов.
+- `operator[]`: Доступ по индексу (без проверки).
+- `at(n)`: Доступ с проверкой границ.
+- `begin()`, `end()`: Итераторы.
+
+**Пример**:
+```cpp
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> v;
+    v.reserve(10); // Выделяем память
+    v.push_back(1);
+    v.push_back(2);
+    std::cout << "Size: " << v.size() << ", Capacity: " << v.capacity() << std::endl; // Size: 2, Capacity: 10
+    v.resize(5, 0); // 1, 2, 0, 0, 0
+    std::cout << v.at(3) << std::endl; // 0
+    return 0;
+}
+```
+
+**Работа с алгоритмами**:
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+int main() {
+    std::vector<int> v = {5, 2, 8, 1};
+    // Сортировка
+    std::sort(v.begin(), v.end());
+    for (int x : v) {
+        std::cout << x << " "; // 1 2 5 8
+    }
+    std::cout << std::endl;
+    // Поиск
+    auto it = std::find(v.begin(), v.end(), 5);
+    if (it != v.end()) {
+        std::cout << "Found: " << *it << std::endl; // Found: 5
+    }
+    // Применение функции
+    std::for_each(v.begin(), v.end(), [](int& x) { x *= 2; });
+    for (int x : v) {
+        std::cout << x << " "; // 2 4 10 16
+    }
+    std::cout << std::endl;
+    return 0;
+}
+```
+
+**Пояснение**:  
+`std::vector` — один из самых универсальных контейнеров, идеально подходящий для последовательного хранения. Алгоритмы STL повышают его функциональность, минимизируя ручной код.
 
 ---
 
